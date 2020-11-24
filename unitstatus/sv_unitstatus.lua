@@ -11,6 +11,13 @@
 local pluginConfig = Config.GetPluginConfig("unitstatus")
 
 if pluginConfig.enabled then
+    local ESX
+	Citizen.CreateThread(function()
+		while not ESX do
+			TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
+			Citizen.Wait(5)
+		end
+	end)
 
     registerApiType("UNIT_STATUS", "emergency")
 
@@ -37,7 +44,9 @@ if pluginConfig.enabled then
     RegisterNetEvent("SonoranCAD::unitstatus:UpdateStatus")
     AddEventHandler("SonoranCAD::unitstatus:UpdateStatus", function(status)
         local source = source
-        if not IsPlayerAceAllowed(source, "command.setstatus") and pluginConfig.enableAceCheck then
+        local job = ESX.GetPlayerFromId(source).getJob()
+        local allowed = job and pluginConfig.jobs[job.name]
+        if not allowed then
             TriggerClientEvent("chat:addMessage", source, {args = {"^0[ ^1Error ^0] ", "Access denied."}})
             return
         end
